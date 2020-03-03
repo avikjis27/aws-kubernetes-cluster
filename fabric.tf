@@ -29,7 +29,8 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
   tags                 = merge( var.tags, 
 	  { 
-		  Name = "eks-test-vpc" 
+		  Name = var.cluster_name,
+		  "kubernetes.io/cluster/${var.cluster_name}" = "shared"
 	  }
 	)
 }
@@ -38,18 +39,21 @@ resource "aws_vpc" "main" {
 
 resource "aws_internet_gateway" "internet_gateway" {
   vpc_id = aws_vpc.main.id
-  tags   = var.tags
-}
-
-resource "aws_network_interface" "eni" {
-  subnet_id   = element(aws_subnet.external.*.id, 0)
-  private_ips = ["10.30.1.1"]
+  tags   = merge( var.tags, 
+	  { 
+		  Name = "eks_internet_gw"
+	  }
+	)
 }
 
 resource "aws_eip" "nat_eip" {
   vpc                       = true
-  network_interface         = aws_network_interface.eni.id
-  associate_with_private_ip = "10.30.1.1"
+  associate_with_private_ip = "10.30.1.6"
+  tags                 = merge( var.tags, 
+	  { 
+		  Name = "nat_eip"
+	  }
+	)
 }
 
 //NAT Gateway
@@ -58,6 +62,11 @@ resource "aws_nat_gateway" "nat_gateway" {
   allocation_id = aws_eip.nat_eip.id
   subnet_id     = element(aws_subnet.external.*.id, 0)
   depends_on = ["aws_internet_gateway.internet_gateway"]
+  tags                 = merge( var.tags, 
+	  { 
+		  Name = "nat_gw"
+	  }
+	)
 }
 
 // Subnets
@@ -70,7 +79,8 @@ resource "aws_subnet" "internal" {
   tags              = merge(
 	  var.tags, 
 	  { 
-		  Name = "subnet-internal-${format("%03d", count.index + 1)}" 
+		  Name = "subnet-internal-${format("%03d", count.index + 1)}",
+		  "kubernetes.io/cluster/${var.cluster_name}" = "shared"
 	  }
 	)
 }
@@ -84,7 +94,8 @@ resource "aws_subnet" "external" {
 
   tags = merge(var.tags,
     {
-		Name = "subnet-external-${format("%03d", count.index + 1)}" 
+		Name = "subnet-external-${format("%03d", count.index + 1)}" ,
+		"kubernetes.io/cluster/${var.cluster_name}" = "shared"
 	},
   )
 }
@@ -224,6 +235,18 @@ module "eks_master" {
   eks_cluster_subnet_ids = aws_subnet.internal.*.id
   tags			= var.tags
 
+}
+
+module "eks_worker" {
+	source      	= "./modules/eks_worker"
+	cluster_name	= var.cluster_name
+	eks_cluster_version = module.eks_master.eks_cluster_version
+	eks_cluster_ep 	= module.eks_master.eks_cluster_ep
+	eks_certificate_authority_data = module.eks_master.eks_certificate_authority_data
+	vpc_id			= aws_vpc.main.id
+	master_security_group_id = module.eks_master.master_security_group_id
+	private_subnet_ids = aws_subnet.internal.*.id
+	tags			= var.tags
 }
 
 

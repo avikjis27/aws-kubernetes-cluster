@@ -84,3 +84,9 @@ resource "aws_security_group_rule" "eks-cluster-ingress-workstation-https" {
   to_port           = 443
   type              = "ingress"
 }
+
+
+output "master_security_group_id" 	 { value = aws_security_group.eks-master-sg.id }
+output "eks_cluster_version" 		 { value = aws_eks_cluster.eks_cluster.version }
+output "eks_certificate_authority_data" { value = aws_eks_cluster.eks_cluster.certificate_authority.0.data }
+output "eks_cluster_ep"				 { value = aws_eks_cluster.eks_cluster.endpoint }
