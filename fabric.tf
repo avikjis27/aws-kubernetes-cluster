@@ -216,6 +216,17 @@ POLICY
 }
 
 
+module "eks_master" {
+  source      	= "./modules/eks_master"
+  cluster_name	= var.cluster_name
+  vpc_id		= aws_vpc.main.id
+  external_ips	= var.external_ips
+  eks_cluster_subnet_ids = aws_subnet.internal.*.id
+  tags			= var.tags
+
+}
+
+
 // Outputs
 output "vpc_id"             { value = aws_vpc.main.id }
 output "cidr_block"         { value = aws_vpc.main.cidr_block }

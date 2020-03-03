@@ -24,6 +24,15 @@ variable "availability_zones" {
   type        = "list"
 }
 
+variable "external_ips" {
+	description = "List of external ips with CIDR from which to access the cluster "
+	type = list(string)
+}
+
+variable "cluster_name" {
+	description = "EKS cluster name"
+}
+
 variable "tags" {
 	 description = "Common tags of all the resources"
 	 type        = "map"
