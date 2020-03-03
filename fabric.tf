@@ -1,3 +1,26 @@
+/*
+The fabric layer contains
+1. The VPC
+2. Two subnets(internal or private and external or public) inside the VPC
+3. Two Route tables for internal and external subnets
+4. Two corresponding route table associations
+5. Required Routes
+6. Security groups
+7. Internet gateway in external subnet
+8. NAT-GW in the external subnet
+9. Required EIP for NAT-GW
+10. S3 Buckets
+11. DNS names
+
+
+
+
+
+*/
+
+
+
+
 // VPC
 
 resource "aws_vpc" "main" {
@@ -11,11 +34,30 @@ resource "aws_vpc" "main" {
 	)
 }
 
-// Gateways
+// Internet Gateways
 
-resource "aws_internet_gateway" "main" {
+resource "aws_internet_gateway" "internet_gateway" {
   vpc_id = aws_vpc.main.id
   tags   = var.tags
+}
+
+resource "aws_network_interface" "eni" {
+  subnet_id   = element(aws_subnet.external.*.id, 0)
+  private_ips = ["10.30.1.1"]
+}
+
+resource "aws_eip" "nat_eip" {
+  vpc                       = true
+  network_interface         = aws_network_interface.eni.id
+  associate_with_private_ip = "10.30.1.1"
+}
+
+//NAT Gateway
+
+resource "aws_nat_gateway" "nat_gateway" {
+  allocation_id = aws_eip.nat_eip.id
+  subnet_id     = element(aws_subnet.external.*.id, 0)
+  depends_on = ["aws_internet_gateway.internet_gateway"]
 }
 
 // Subnets
@@ -73,7 +115,7 @@ resource "aws_route_table" "internal" {
 resource "aws_route" "external" {
   route_table_id         = aws_route_table.external.id
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = aws_internet_gateway.main.id //This is the source
+  gateway_id             = aws_internet_gateway.internet_gateway.id //This is the source
 }
 
 // Route associations
@@ -146,6 +188,24 @@ resource "aws_route53_record" "sandbox_eks_domain" {
 resource "aws_s3_bucket" "kops_bucket" {
   bucket = "eks.sandbox.devops.onelxk.co"
   acl    = "private"
+  policy = <<POLICY
+{
+    "Id": "Policy1583146367012",
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "Stmt1583146359660",
+            "Action": [
+                "s3:GetBucketLocation"
+            ],
+            "Effect": "Allow",
+            "Resource": "arn:aws:s3:::eks.sandbox.devops.onelxk.co",
+            "Principal": "*"
+        }
+    ]
+}
+POLICY
+  
 
   tags = merge(
 	  var.tags,

@@ -4,3 +4,6 @@
 - `make plan` to get the plan
 - `make apply` to provision the infra
 - `make destroy` to destroy the infra
+
+
+https://learn.hashicorp.com/terraform/aws/eks-intro
