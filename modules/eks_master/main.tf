@@ -16,13 +16,7 @@ resource "aws_iam_role" "master_role" {
   ]
 }
 POLICY
-
-tags = merge(
-	  var.tags,
-      { 
-		  Name = "terraform-eks-master-role" 
-	  },
-  ) 
+ 
 }
 
 resource "aws_iam_role_policy_attachment" "eks-cluster-AmazonEKSClusterPolicy" {

@@ -18,13 +18,6 @@ resource "aws_iam_role" "worker_role" {
 }
 POLICY
 
-tags = merge(
-	  var.tags,
-      { 
-		  Name = "terraform-eks-worker-role" 
-	  },
-  ) 
-
 }
 
 resource "aws_iam_instance_profile" "k8s-node" {
@@ -101,7 +94,7 @@ data "aws_ami" "eks-worker" {
    }
 
    most_recent = true
-   owners 	= ["self"]
+   owners 	= ["amazon"]
  }
 
  # This data source is included for ease of sample architecture deployment
