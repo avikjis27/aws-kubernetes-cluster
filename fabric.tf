@@ -104,9 +104,10 @@ resource "aws_subnet" "external" {
 
 resource "aws_route_table" "external" {
   vpc_id = aws_vpc.main.id
+  count  = length(var.availability_zones)
   tags = merge(var.tags,
     { 
-		Name = "route-table-external-001" 
+		Name = "route-table-external-${format("%03d", count.index + 1)}" 
 	},
   )
 }
@@ -124,9 +125,17 @@ resource "aws_route_table" "internal" {
 }
 
 resource "aws_route" "external" {
-  route_table_id         = aws_route_table.external.id
+  count  = length(var.availability_zones)
+  route_table_id         = element(aws_route_table.external.*.id, count.index)
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = aws_internet_gateway.internet_gateway.id //This is the source
+  gateway_id             = aws_internet_gateway.internet_gateway.id
+}
+
+resource "aws_route" "internal" {
+  count  = length(var.availability_zones)
+  route_table_id         = element(aws_route_table.internal.*.id, count.index)
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id             = aws_nat_gateway.nat_gateway.id
 }
 
 // Route associations
@@ -140,7 +149,7 @@ resource "aws_route_table_association" "internal" {
 resource "aws_route_table_association" "external" {
   count          = length(var.external_subnets) >= length(var.availability_zones) ? length(var.availability_zones) : 0
   subnet_id      = element(aws_subnet.external.*.id, count.index)
-  route_table_id = aws_route_table.external.id
+  route_table_id = element(aws_route_table.external.*.id, count.index)
 }
 
 
@@ -245,9 +254,31 @@ module "eks_worker" {
 	eks_certificate_authority_data = module.eks_master.eks_certificate_authority_data
 	vpc_id			= aws_vpc.main.id
 	master_security_group_id = module.eks_master.master_security_group_id
-	private_subnet_ids = aws_subnet.internal.*.id
+	private_subnet_ids = aws_subnet.external.*.id
 	tags			= var.tags
 }
+
+locals {
+  config_map_aws_auth = <<CONFIGMAPAWSAUTH
+
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-auth
+  namespace: kube-system
+data:
+  mapRoles: |
+    - rolearn: ${module.eks_worker.eks_worker_role_arn}
+      username: system:node:{{EC2PrivateDNSName}}
+      groups:
+        - system:bootstrappers
+        - system:nodes
+CONFIGMAPAWSAUTH
+
+}
+
+
 
 
 // Outputs
@@ -257,3 +288,4 @@ output "external_subets"    { value = aws_subnet.external.* }
 output "availability_zones" { value = var.availability_zones }
 output "hosted_zone_id" 	{ value = aws_route53_zone.eks_domain.zone_id}
 output "kops_bucket_name"	{ value = aws_s3_bucket.kops_bucket.id }
+output "config_map_aws_auth" { value = local.config_map_aws_auth }

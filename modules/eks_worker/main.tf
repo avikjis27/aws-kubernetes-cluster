@@ -1,3 +1,6 @@
+
+#https://medium.com/@tarunprakash/5-things-you-need-know-to-add-worker-nodes-in-the-aws-eks-cluster-bfbcb9fa0c37
+
 # See this https://docs.aws.amazon.com/eks/latest/userguide/service_IAM_role.html
 
 resource "aws_iam_role" "worker_role" {
@@ -12,6 +15,11 @@ resource "aws_iam_role" "worker_role" {
       "Principal": {
         "Service": "eks.amazonaws.com"
       },
+	  {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      }
       "Action": "sts:AssumeRole"
     }
   ]
@@ -23,6 +31,10 @@ POLICY
 resource "aws_iam_instance_profile" "k8s-node" {
   name = var.cluster_name
   role = aws_iam_role.worker_role.name
+  depends_on = [
+    "aws_iam_role_policy_attachment.eks-cluster-AmazonEKSClusterPolicy",
+    "aws_iam_role_policy_attachment.eks-cluster-AmazonEKSServicePolicy",
+  ]
 }
 
 resource "aws_iam_role_policy_attachment" "eks-cluster-AmazonEKSClusterPolicy" {
@@ -34,6 +46,13 @@ resource "aws_iam_role_policy_attachment" "eks-cluster-AmazonEKSServicePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
   role       = aws_iam_role.worker_role.name
 }
+
+resource "aws_iam_role_policy_attachment" "eks-cluster-AmazonEKSCNIPolicy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+  role       = aws_iam_role.worker_role.name
+}
+
+// ECR Full access policy is required
 
 resource "aws_security_group" "eks-worker-sg" {
   name        = "terraform-eks-worker-sg"
@@ -124,6 +143,7 @@ resource "aws_launch_configuration" "eks_launch_configuration" {
   name_prefix                 = "terraform-eks"
   security_groups  			  = [aws_security_group.eks-worker-sg.id]
   user_data_base64 			  = base64encode(local.eks-node-userdata)
+  key_name					  =	"ISS-DevOps-west-2"
 
   lifecycle {
     create_before_destroy = true
@@ -149,5 +169,19 @@ resource "aws_autoscaling_group" "eks_asg" {
     value               = "owned"
     propagate_at_launch = true
   }
+
+  tag {
+    key                 = "k8s.io/cluster-autoscaler/${var.cluster_name}"
+    value               = ""
+    propagate_at_launch = true
+  }
+
+  tag {
+    key                 = "k8s.io/cluster-autoscaler/enabled"
+    value               = ""
+    propagate_at_launch = true
+  }
   
 }
+
+output "eks_worker_role_arn" 		 { value = aws_iam_role.worker_role.arn}
