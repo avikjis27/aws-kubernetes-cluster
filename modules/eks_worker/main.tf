@@ -1,8 +1,3 @@
-
-#https://medium.com/@tarunprakash/5-things-you-need-know-to-add-worker-nodes-in-the-aws-eks-cluster-bfbcb9fa0c37
-
-# See this https://docs.aws.amazon.com/eks/latest/userguide/service_IAM_role.html
-
 resource "aws_iam_role" "worker_role" {
   name = "terraform-eks-worker-role"
 
@@ -15,11 +10,13 @@ resource "aws_iam_role" "worker_role" {
       "Principal": {
         "Service": "eks.amazonaws.com"
       },
-	  {
+      "Action": "sts:AssumeRole"
+    },
+	{
       "Effect": "Allow",
       "Principal": {
         "Service": "ec2.amazonaws.com"
-      }
+      },
       "Action": "sts:AssumeRole"
     }
   ]
@@ -67,11 +64,11 @@ resource "aws_security_group" "eks-worker-sg" {
   }
 
   tags = merge(
-	  var.tags,
-      { 
-		  Name = "terraform-eks-worker-sg",
-		  "kubernetes.io/cluster/${var.cluster_name}" = "owned"
-	  },
+    var.tags,
+    {
+      Name                                        = "terraform-eks-worker-sg",
+      "kubernetes.io/cluster/${var.cluster_name}" = "owned"
+    },
   )
 }
 
@@ -93,10 +90,10 @@ resource "aws_security_group_rule" "ingress-cluster" {
   source_security_group_id = var.master_security_group_id
   to_port                  = 65535
   type                     = "ingress"
- }
+}
 
 #Worker Node Access to EKS Master Cluster
- resource "aws_security_group_rule" "ingress-node-https" {
+resource "aws_security_group_rule" "ingress-node-https" {
   description              = "Allow pods to communicate with the cluster API Server"
   from_port                = 443
   protocol                 = "tcp"
@@ -107,16 +104,16 @@ resource "aws_security_group_rule" "ingress-cluster" {
 }
 
 data "aws_ami" "eks-worker" {
-   filter {
-     name   = "name"
-     values = ["amazon-eks-node-${var.eks_cluster_version}-v*"]
-   }
+  filter {
+    name   = "name"
+    values = ["amazon-eks-node-${var.eks_cluster_version}-v*"]
+  }
 
-   most_recent = true
-   owners 	= ["amazon"]
- }
+  most_recent = true
+  owners      = ["amazon"]
+}
 
- # This data source is included for ease of sample architecture deployment
+# This data source is included for ease of sample architecture deployment
 # and can be swapped out as necessary.
 data "aws_region" "current" {
 }
@@ -141,9 +138,9 @@ resource "aws_launch_configuration" "eks_launch_configuration" {
   image_id                    = data.aws_ami.eks-worker.id
   instance_type               = "t2.medium"
   name_prefix                 = "terraform-eks"
-  security_groups  			  = [aws_security_group.eks-worker-sg.id]
-  user_data_base64 			  = base64encode(local.eks-node-userdata)
-  key_name					  =	"ISS-DevOps-west-2"
+  security_groups             = [aws_security_group.eks-worker-sg.id]
+  user_data_base64            = base64encode(local.eks-node-userdata)
+  key_name                    = "ISS-DevOps-west-2"
 
   lifecycle {
     create_before_destroy = true
@@ -157,9 +154,9 @@ resource "aws_autoscaling_group" "eks_asg" {
   min_size             = 1
   name                 = "terraform-eks-asg"
   vpc_zone_identifier  = var.private_subnet_ids
-  
+
   tag {
-	key                 = "Name"
+    key                 = "Name"
     value               = "terraform-eks-asg"
     propagate_at_launch = true
   }
@@ -181,7 +178,7 @@ resource "aws_autoscaling_group" "eks_asg" {
     value               = ""
     propagate_at_launch = true
   }
-  
+
 }
 
-output "eks_worker_role_arn" 		 { value = aws_iam_role.worker_role.arn}
+output "eks_worker_role_arn" { value = aws_iam_role.worker_role.arn }

@@ -1,8 +1,6 @@
 init:
 	terraform init 
 plan: init
-	terraform plan -var-file config.tfvars
+	terraform plan -var-file ./configs/sandbox.tfvars
 apply: init
-	terraform apply -var-file config.tfvars
-kops-tf-create:
-	./kops-tf-create.sh
+	terraform apply -var-file ./configs/sandbox.tfvars
