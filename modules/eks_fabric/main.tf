@@ -23,7 +23,7 @@ resource "aws_internet_gateway" "internet_gateway" {
   vpc_id = aws_vpc.main.id
   tags = merge(var.tags,
     {
-      Name = "eks_internet_gw"
+      Name = "internet_gw"
     }
   )
 }
@@ -54,8 +54,10 @@ resource "aws_nat_gateway" "nat_gateway" {
 }
 
 output "nat_gateway" { value = aws_eip.nat_eip.id }
-// Subnets
 
+// Subnets
+// To understand how to tag internal and external subnet see 
+// https://aws.amazon.com/premiumsupport/knowledge-center/eks-vpc-subnet-discovery/
 resource "aws_subnet" "internal" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = element(var.internal_subnets, count.index)
@@ -66,6 +68,7 @@ resource "aws_subnet" "internal" {
     {
       Name                                        = "subnet-internal-${format("%03d", count.index + 1)}",
       "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+	  "kubernetes.io/role/internal-elb"			  = "1"
     }
   )
 }
@@ -83,6 +86,7 @@ resource "aws_subnet" "external" {
     {
       Name                                        = "subnet-external-${format("%03d", count.index + 1)}",
       "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+	  "kubernetes.io/role/elb"					  = "1"
     },
   )
 }
