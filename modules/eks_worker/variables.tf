@@ -36,6 +36,10 @@ variable "private_subnet_ids" {
 	type = list(string)
 }
 
+variable "bastion_sg" {
+	description = "bastion security group id"
+}
+
 variable "desired_capacity" {
 	description = "Desired capacity of the worker node asg"
 }

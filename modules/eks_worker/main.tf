@@ -75,6 +75,16 @@ resource "aws_security_group_rule" "ingress-self" {
   type                     = "ingress"
 }
 
+resource "aws_security_group_rule" "ingress-bastion" {
+  description              = "Allow node to communicate with each other"
+  from_port                = 443
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.eks-worker-sg.id
+  source_security_group_id = var.bastion_sg
+  to_port                  = 443
+  type                     = "ingress"
+}
+
 resource "aws_security_group_rule" "ingress-cluster" {
   description              = "Allow worker Kubelets and pods to receive communication from the cluster control      plane"
   from_port                = 1025
@@ -145,8 +155,8 @@ resource "aws_autoscaling_group" "eks_asg" {
 
   tag {
     key                 = "Name"
-    value               = "terraform-eks-asg"
-	propagate_at_launch = false
+    value               = "eks-worker-nodes"
+	propagate_at_launch = true
   }
 
   tag {

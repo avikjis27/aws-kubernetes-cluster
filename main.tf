@@ -37,8 +37,9 @@ module "eks_worker" {
   eks_cluster_ep                 = module.eks_master.eks_cluster_ep
   eks_certificate_authority_data = module.eks_master.eks_certificate_authority_data
   vpc_id                         = module.eks_fabric.vpc_id
+  bastion_sg					 = module.eks_fabric.bastion_sg
   master_security_group_id       = module.eks_master.master_security_group_id
-  private_subnet_ids             = module.eks_fabric.external_subnet
+  private_subnet_ids             = module.eks_fabric.internal_subnet
   instance_type					 = var.worker_node_instance_type
   desired_capacity				 = var.worker_node_desired_capacity
   tags                           = var.tags
@@ -65,11 +66,8 @@ CONFIGMAPAWSAUTH
 }
 
 
-
-
 // Outputs
 output "vpc_id" { value = module.eks_fabric.vpc_id }
 output "cidr_block" { value = var.cidr_block }
-//output "external_subets" { value = aws_subnet.external.* }
 output "availability_zones" { value = var.availability_zones }
 output "config_map_aws_auth" { value = local.config_map_aws_auth }
