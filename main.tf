@@ -25,7 +25,7 @@ module "eks_master" {
   cluster_name           = var.cluster_name
   vpc_id                 = module.eks_fabric.vpc_id
   external_ips           = var.external_ips
-  eks_cluster_subnet_ids = module.eks_fabric.internal_subnet
+  eks_cluster_subnet_ids = concat(module.eks_fabric.internal_subnet, module.eks_fabric.external_subnet)
   tags                   = var.tags
 
 }
