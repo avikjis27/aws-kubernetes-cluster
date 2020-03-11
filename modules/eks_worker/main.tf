@@ -106,11 +106,6 @@ data "aws_ami" "eks-worker" {
   owners      = ["amazon"]
 }
 
-# This data source is included for ease of sample architecture deployment
-# and can be swapped out as necessary.
-data "aws_region" "current" {
-}
-
 # EKS currently documents this required userdata for EKS worker nodes to
 # properly configure Kubernetes applications on the EC2 instance.
 # We implement a Terraform local here to simplify Base64 encoding this
@@ -129,7 +124,7 @@ resource "aws_launch_configuration" "eks_launch_configuration" {
   associate_public_ip_address = true
   iam_instance_profile        = aws_iam_instance_profile.k8s-node.name
   image_id                    = data.aws_ami.eks-worker.id
-  instance_type               = "t2.medium"
+  instance_type               = var.instance_type
   name_prefix                 = "terraform-eks"
   security_groups             = [aws_security_group.eks-worker-sg.id]
   user_data_base64            = base64encode(local.eks-node-userdata)
@@ -141,17 +136,17 @@ resource "aws_launch_configuration" "eks_launch_configuration" {
 }
 
 resource "aws_autoscaling_group" "eks_asg" {
-  desired_capacity     = 2
+  desired_capacity     = var.desired_capacity
   launch_configuration = aws_launch_configuration.eks_launch_configuration.id
-  max_size             = 2
-  min_size             = 1
+  max_size             = 4
+  min_size             = 0
   name                 = "terraform-eks-asg"
   vpc_zone_identifier  = var.private_subnet_ids
 
   tag {
     key                 = "Name"
     value               = "terraform-eks-asg"
-    propagate_at_launch = true
+	propagate_at_launch = false
   }
 
   tag {

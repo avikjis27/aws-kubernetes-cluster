@@ -38,10 +38,12 @@ resource "aws_eks_cluster" "eks_cluster" {
     security_group_ids = [aws_security_group.eks-master-sg.id]
     subnet_ids         = var.eks_cluster_subnet_ids
   }
+  // See https://aws.amazon.com/premiumsupport/knowledge-center/eks-cluster-autoscaler-setup/ to undestand the tags
   tags = merge(
     var.tags,
     {
-      Name = var.cluster_name
+      Name = var.cluster_name,
+	  "k8s.io/cluster-autoscaler/enabled" = "",
     },
   )
 

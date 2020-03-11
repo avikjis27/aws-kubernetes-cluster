@@ -10,3 +10,5 @@ internal_subnets   = ["10.30.3.0/24", "10.30.4.0/24"]
 availability_zones = ["us-west-2a", "us-west-2b"]
 external_ips       = ["61.16.136.118/32"]
 cluster_name       = "eks-sandbox"
+worker_node_instance_type = "t2.medium"
+worker_node_desired_capacity = 2

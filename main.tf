@@ -39,6 +39,8 @@ module "eks_worker" {
   vpc_id                         = module.eks_fabric.vpc_id
   master_security_group_id       = module.eks_master.master_security_group_id
   private_subnet_ids             = module.eks_fabric.external_subnet
+  instance_type					 = var.worker_node_instance_type
+  desired_capacity				 = var.worker_node_desired_capacity
   tags                           = var.tags
 }
 

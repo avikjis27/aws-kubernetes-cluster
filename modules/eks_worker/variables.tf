@@ -18,6 +18,10 @@ variable "vpc_id" {
 	description = "EKS vpc id"
 }
 
+variable "instance_type" {
+	description = "Instance type of the worker node like t2-medium"
+}
+
 variable "tags" {
 	 description = "Common tags of all the resources"
 	 type        = "map"
@@ -30,4 +34,8 @@ variable "master_security_group_id" {
 variable "private_subnet_ids" {
 	description = "Private subnet id"
 	type = list(string)
+}
+
+variable "desired_capacity" {
+	description = "Desired capacity of the worker node asg"
 }

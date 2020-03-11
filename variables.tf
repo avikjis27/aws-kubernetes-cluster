@@ -30,3 +30,11 @@ variable "external_ips" {
 variable "cluster_name" {
   description = "EKS cluster name"
 }
+
+variable "worker_node_instance_type" {
+	description = "Instance type of the worker node like t2-medium"
+}
+
+variable "worker_node_desired_capacity" {
+	description = "Desired capacity of the worker node asg"
+}
