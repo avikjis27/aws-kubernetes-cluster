@@ -38,7 +38,7 @@ module "eks_worker" {
   eks_certificate_authority_data = module.eks_master.eks_certificate_authority_data
   vpc_id                         = module.eks_fabric.vpc_id
   bastion_sg					 = module.eks_fabric.bastion_sg
-  master_security_group_id       = module.eks_master.master_security_group_id
+  cluster_security_group_id       = module.eks_master.cluster_security_group_id
   private_subnet_ids             = module.eks_fabric.internal_subnet
   instance_type					 = var.worker_node_instance_type
   desired_capacity				 = var.worker_node_desired_capacity

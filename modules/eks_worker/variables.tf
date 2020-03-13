@@ -40,6 +40,10 @@ variable "bastion_sg" {
 	description = "bastion security group id"
 }
 
+variable "cluster_security_group_id" {
+	description = "cluster security group"
+}
+
 variable "desired_capacity" {
 	description = "Desired capacity of the worker node asg"
 }

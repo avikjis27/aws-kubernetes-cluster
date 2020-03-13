@@ -35,7 +35,6 @@ resource "aws_eks_cluster" "eks_cluster" {
   role_arn = aws_iam_role.master_role.arn
 
   vpc_config {
-    security_group_ids = [aws_security_group.eks-master-sg.id]
     subnet_ids         = var.eks_cluster_subnet_ids
   }
   // See https://aws.amazon.com/premiumsupport/knowledge-center/eks-cluster-autoscaler-setup/ to undestand the tags
@@ -83,13 +82,13 @@ resource "aws_security_group_rule" "eks-cluster-ingress-workstation-https" {
   description       = "Allow workstation to communicate with the cluster API Server"
   from_port         = 443
   protocol          = "tcp"
-  security_group_id = "${aws_security_group.eks-master-sg.id}"
+  security_group_id = aws_eks_cluster.eks_cluster.vpc_config.cluster_security_group_id
   to_port           = 443
   type              = "ingress"
 }
 
 
-output "master_security_group_id" { value = aws_security_group.eks-master-sg.id }
+output "cluster_security_group_id" { value = aws_eks_cluster.eks_cluster.vpc_config.cluster_security_group_id }
 output "eks_cluster_version" { value = aws_eks_cluster.eks_cluster.version }
 output "eks_certificate_authority_data" { value = aws_eks_cluster.eks_cluster.certificate_authority.0.data }
 output "eks_cluster_ep" { value = aws_eks_cluster.eks_cluster.endpoint }
