@@ -27,10 +27,6 @@ variable "tags" {
 	 type        = "map"
 }
 
-variable "master_security_group_id" {
-	description = "Security group id of the master"
-}
-
 variable "private_subnet_ids" {
 	description = "Private subnet id"
 	type = list(string)

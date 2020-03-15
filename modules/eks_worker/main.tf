@@ -44,67 +44,26 @@ resource "aws_iam_role_policy_attachment" "eks-worker-AmazonEC2ContainerRegistry
   role       = aws_iam_role.worker_role.name
 }
 
-# resource "aws_security_group" "eks-worker-sg" {
-#   name        = "terraform-eks-worker-sg"
-#   description = "Security group for all nodes in the cluster"
-#   vpc_id      = var.vpc_id
+resource "aws_security_group" "eks-worker-sg-bastion-ingress" {
+  name        = "terraform-eks-worker-sg"
+  description = "Security group for all nodes in the cluster"
+  vpc_id      = var.vpc_id
 
-#   egress {
-#     from_port   = 0
-#     to_port     = 0
-#     protocol    = "-1"
-#     cidr_blocks = ["0.0.0.0/0"]
-#   }
+  ingress {
+    protocol    = "tcp"
+    from_port   = 22
+    to_port     = 22
+    security_groups = [var.bastion_sg]
+  }
 
-#   tags = merge(
-#     var.tags,
-#     {
-#       Name                                        = "terraform-eks-worker-sg",
-#       "kubernetes.io/cluster/${var.cluster_name}" = "owned"
-#     },
-#   )
-# }
-
-# resource "aws_security_group_rule" "ingress-self" {
-#   description              = "Allow node to communicate with each other"
-#   from_port                = 0
-#   protocol                 = "-1"
-#   security_group_id        = aws_security_group.eks-worker-sg.id
-#   source_security_group_id = aws_security_group.eks-worker-sg.id
-#   to_port                  = 65535
-#   type                     = "ingress"
-# }
-
-resource "aws_security_group_rule" "ingress-bastion" {
-  description              = "Allow node to communicate with each other"
-  from_port                = 443
-  protocol                 = "tcp"
-  security_group_id        = var.cluster_security_group_id
-  source_security_group_id = var.bastion_sg
-  to_port                  = 443
-  type                     = "ingress"
+  tags = merge(
+    var.tags,
+    {
+      Name                                        = "terraform-eks-worker-sg-for-bastion",
+      "kubernetes.io/cluster/${var.cluster_name}" = "owned"
+    },
+  )
 }
-
-# resource "aws_security_group_rule" "ingress-cluster" {
-#   description              = "Allow worker Kubelets and pods to receive communication from the cluster control      plane"
-#   from_port                = 1025
-#   protocol                 = "tcp"
-#   security_group_id        = aws_security_group.eks-worker-sg.id
-#   source_security_group_id = var.master_security_group_id
-#   to_port                  = 65535
-#   type                     = "ingress"
-# }
-
-# #Worker Node Access to EKS Master Cluster
-# resource "aws_security_group_rule" "ingress-node-https" {
-#   description              = "Allow pods to communicate with the cluster API Server"
-#   from_port                = 443
-#   protocol                 = "tcp"
-#   security_group_id        = var.master_security_group_id
-#   source_security_group_id = aws_security_group.eks-worker-sg.id
-#   to_port                  = 443
-#   type                     = "ingress"
-# }
 
 data "aws_ami" "eks-worker" {
   filter {
@@ -136,10 +95,9 @@ resource "aws_launch_configuration" "eks_launch_configuration" {
   image_id                    = data.aws_ami.eks-worker.id
   instance_type               = var.instance_type
   name_prefix                 = "terraform-eks"
-  security_groups             = [var.cluster_security_group_id]
+  security_groups             = [var.cluster_security_group_id, aws_security_group.eks-worker-sg-bastion-ingress.id]
   user_data_base64            = base64encode(local.eks-node-userdata)
   key_name                    = "ISS-DevOps-west-2"
-
   lifecycle {
     create_before_destroy = true
   }

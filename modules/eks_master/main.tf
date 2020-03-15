@@ -74,21 +74,19 @@ resource "aws_security_group" "eks-master-sg" {
   )
 }
 
-# OPTIONAL: Allow inbound traffic from your local workstation external IP
-#           to the Kubernetes. You will need to replace A.B.C.D below with
-#           your real IP. Services like icanhazip.com can help you find this.
+
 resource "aws_security_group_rule" "eks-cluster-ingress-workstation-https" {
   cidr_blocks       = var.external_ips
   description       = "Allow workstation to communicate with the cluster API Server"
   from_port         = 443
   protocol          = "tcp"
-  security_group_id = aws_eks_cluster.eks_cluster.vpc_config.cluster_security_group_id
+  security_group_id = aws_eks_cluster.eks_cluster.vpc_config[0].cluster_security_group_id
   to_port           = 443
   type              = "ingress"
 }
 
 
-output "cluster_security_group_id" { value = aws_eks_cluster.eks_cluster.vpc_config.cluster_security_group_id }
+output "cluster_security_group_id" { value = aws_eks_cluster.eks_cluster.vpc_config[0].cluster_security_group_id }
 output "eks_cluster_version" { value = aws_eks_cluster.eks_cluster.version }
 output "eks_certificate_authority_data" { value = aws_eks_cluster.eks_cluster.certificate_authority.0.data }
 output "eks_cluster_ep" { value = aws_eks_cluster.eks_cluster.endpoint }
