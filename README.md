@@ -1,6 +1,7 @@
 
 
 This is a demo project to create a working EKS cluster using terraform only.
+[Medium post](https://medium.com/@avikjis27/build-an-eks-cluster-using-terraform-ecf011e37884)
 
 ### For this project I have used
 	- Terraform v0.12.13

@@ -97,7 +97,7 @@ resource "aws_launch_configuration" "eks_launch_configuration" {
   name_prefix                 = "terraform-eks"
   security_groups             = [var.cluster_security_group_id, aws_security_group.eks-worker-sg-bastion-ingress.id]
   user_data_base64            = base64encode(local.eks-node-userdata)
-  key_name                    = "ISS-DevOps-west-2"
+  key_name                    = "DevOps-west-2"
   lifecycle {
     create_before_destroy = true
   }
